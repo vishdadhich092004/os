@@ -1,0 +1,80 @@
+#include <stdio.h>
+#include <string.h>
+
+struct process {
+    int size;         // Size of the process
+    char name[20];    // Name of the process
+    int id;           // Block allocated to the process
+} p[20] = {0, 0};
+
+struct block {
+    int size;         // Size of the memory block
+    int id;           // ID of the process allocated to the block (0 if no allocation)
+} b[20] = {0, 0};
+
+int main() {
+    int nb, np, i, j;
+    
+    // Input the number of blocks
+    printf("\nEnter The No Of Blocks: ");
+    scanf("%d", &nb);
+    
+    // Input the size of each block
+    for (i = 0; i < nb; i++) {
+        printf("Enter The Size of Block #%d: ", i + 1);
+        scanf("%d", &b[i].size);
+        b[i].id = 0;  // Initially, no block is allocated
+    }
+    
+    // Input the number of processes
+    printf("\nEnter The No Of Processes: ");
+    scanf("%d", &np);
+    
+    // Input the process name and size
+    for (i = 0; i < np; i++) {
+        printf("Enter The Name of process #%d: ", i + 1);
+        scanf("%s", p[i].name);
+        printf("Enter The Size of process #%d: ", i + 1);
+        scanf("%d", &p[i].size);
+        p[i].id = 0;  // Initially, no process is allocated to any block
+    }
+    
+    // First Fit allocation logic
+    for (i = 0; i < np; i++) {
+        for (j = 0; j < nb; j++) {
+            // Find the first available block that can accommodate the process
+            if (b[j].id == 0 && p[i].size <= b[j].size) {
+                b[j].id = i + 1;  // Allocate the block to the process
+                p[i].id = j + 1;  // Assign this block ID to the process
+                break;  // Move to the next process
+            }
+        }
+    }
+
+    // Printing the block allocation table
+    printf("\nBlock Allocation\n----------------");
+    printf("\nBlock ID   Block Size   Process Name  Process Size");
+    for (i = 0; i < nb; i++) {
+        if (b[i].id != 0) {
+            printf("\nBlock #%d   %-10d   %-12s   %-10d", 
+                   i + 1, b[i].size, p[b[i].id - 1].name, p[b[i].id - 1].size);
+        } else {
+            printf("\nBlock #%d   %-10d   Empty        Empty", i + 1, b[i].size);
+        }
+    }
+    
+    // Printing the process allocation table
+    printf("\n\nProcess Allocation\n-------------------");
+    printf("\nProcess Name   Process Size   Block ID   Block Size");
+    for (i = 0; i < np; i++) {
+        if (p[i].id != 0) {
+            printf("\n%-12s   %-10d   Block #%d   %-10d", 
+                   p[i].name, p[i].size, p[i].id, b[p[i].id - 1].size);
+        } else {
+            printf("\n%-12s   %-10d   Waiting     Waiting", p[i].name, p[i].size);
+        }
+    }
+    
+    printf("\n");
+    return 0;
+}

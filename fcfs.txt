@@ -1,0 +1,50 @@
+#include<stdio.h>
+
+struct process {
+    int burst, wait;
+} p[20] = {0, 0};
+
+int main() {
+    int n, i, totalwait = 0, totalturn = 0;
+
+    // Input the number of processes
+    printf("\nEnter The No Of Processes: ");
+    scanf("%d", &n);
+
+    // Input burst times for each process
+    for(i = 0; i < n; i++) {
+        printf("Enter The Burst Time (in ms) For Process #%2d: ", i + 1);
+        scanf("%d", &p[i].burst);
+    }
+
+    // Initialize waiting time for the first process to 0
+    p[0].wait = 0;
+
+    // Calculate waiting time and turnaround time
+    printf("\nProcess\tWaiting Time (in ms)\tTurnaround Time (in ms)");
+    printf("\n-------------------------------------------------------------");
+
+    for(i = 0; i < n; i++) {
+        // Calculate turnaround time for each process
+        int turnaround_time = p[i].wait + p[i].burst;
+
+        // Print process details
+        printf("\nProcess #%2d\t\t%-15d\t\t%-15d", i + 1, p[i].wait, turnaround_time);
+
+        // Accumulate total waiting and turnaround time
+        totalwait += p[i].wait;
+        totalturn += turnaround_time;
+
+        // Calculate wait time for the next process
+        if (i < n - 1) {
+            p[i + 1].wait = p[i].wait + p[i].burst;
+        }
+    }
+
+    // Calculate and print average waiting time and average turnaround time
+    printf("\n\nAVERAGE\n---------");
+    printf("\nAverage Waiting Time: %.2f ms", totalwait / (float)n);
+    printf("\nAverage Turnaround Time: %.2f ms\n", totalturn / (float)n);
+
+    return 0;
+}

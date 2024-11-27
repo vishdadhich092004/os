@@ -1,0 +1,90 @@
+#include <stdio.h>
+
+struct process {
+    int size;  // Size of the process
+    int id;    // Block allocated to the process
+} p[20] = {0, 0};
+
+struct block {
+    int no;    // Block number
+    int size;  // Size of the block
+    int id;    // ID of the process allocated to the block (0 if unallocated)
+} b[20] = {0, 0};
+
+int main() {
+    int nb, np, i, j;
+
+    // Input number of blocks
+    printf("\nEnter The No Of Blocks: ");
+    scanf("%d", &nb);
+
+    // Input size for each block
+    for (i = 0; i < nb; i++) {
+        printf("Enter The Size of Block #%d: ", i + 1);
+        scanf("%d", &b[i].size);
+        b[i].no = i + 1;  // Block number
+        b[i].id = 0;  // Initially, no block is allocated
+    }
+
+    // Input number of processes
+    printf("\nEnter The No Of Processes: ");
+    scanf("%d", &np);
+
+    // Input size for each process
+    for (i = 0; i < np; i++) {
+        printf("Enter The Size of Process #%d: ", i + 1);
+        scanf("%d", &p[i].size);
+        p[i].id = 0;  // Initially, no process is allocated
+    }
+
+    // Sort blocks in ascending order of size (Best Fit requires the smallest available block)
+    for (i = 0; i < nb; i++) {
+        for (j = 0; j < nb - i - 1; j++) {
+            if (b[j].size > b[j + 1].size) {
+                // Swap blocks
+                struct block temp = b[j];
+                b[j] = b[j + 1];
+                b[j + 1] = temp;
+            }
+        }
+    }
+
+    // Best Fit Allocation Logic
+    for (i = 0; i < np; i++) {
+        for (j = 0; j < nb; j++) {
+            // Allocate the process to the smallest block that fits
+            if (b[j].id == 0 && p[i].size <= b[j].size) {
+                b[j].id = i + 1;  // Mark the block as allocated
+                p[i].id = b[j].no;  // Record the block number for the process
+                break;  // Move to the next process
+            }
+        }
+    }
+
+    // Display Block Allocation
+    printf("\nBlock Allocation\n----------------");
+    printf("\nBlock_ID   Block_Size   Process_ID   Process_Size");
+    for (i = 0; i < nb; i++) {
+        if (b[i].id != 0) {
+            printf("\nBlock #%d   %-10d   Process #%d   %-10d", 
+                   b[i].no, b[i].size, b[i].id, p[b[i].id - 1].size);
+        } else {
+            printf("\nBlock #%d   %-10d   Empty        Empty", b[i].no, b[i].size);
+        }
+    }
+
+    // Display Process Allocation
+    printf("\n\nProcess Allocation\n-------------------");
+    printf("\nProcess_ID   Process_Size   Block_ID   Block_Size");
+    for (i = 0; i < np; i++) {
+        if (p[i].id != 0) {
+            printf("\nProcess #%d   %-10d   Block #%d   %-10d", 
+                   i + 1, p[i].size, p[i].id, b[p[i].id - 1].size);
+        } else {
+            printf("\nProcess #%d   %-10d   Waiting     Waiting", i + 1, p[i].size);
+        }
+    }
+    
+    printf("\n");
+    return 0;
+}
