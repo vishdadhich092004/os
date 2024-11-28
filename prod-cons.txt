@@ -1,0 +1,86 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+
+#define NUM_LOOPS 10 // Number of loops to perform
+
+int main(int argc, char *argv[]) {
+    int sem_set_id;         // ID of the semaphore set
+    int child_pid;          // PID of our child process
+    int i;                  // counter for loop operation
+    struct sembuf sem_op;   // structure for semaphore operations
+    int rc;                 // return value of system calls
+    struct timespec delay;  // used for wasting time
+
+    // Create a private semaphore set with one semaphore in it (permissions 0600)
+    sem_set_id = semget(IPC_PRIVATE, 1, 0600);
+    if (sem_set_id == -1) {
+        perror("semget failed");
+        exit(1);
+    }
+
+    printf("Semaphore set created, semaphore set ID: '%d'\n", sem_set_id);
+
+    // Initialize semaphore value to 0
+    rc = semctl(sem_set_id, 0, SETVAL, 0);
+    if (rc == -1) {
+        perror("semctl failed to set initial semaphore value");
+        exit(1);
+    }
+
+    // Fork off a child process and start a producer/consumer job
+    child_pid = fork();
+    if (child_pid == -1) {
+        perror("fork failed");
+        exit(1);
+    }
+
+    switch (child_pid) {
+        case 0:  // Child process (consumer)
+            for (i = 0; i < NUM_LOOPS; i++) {
+                // Block on the semaphore, unless its value is non-negative (wait for producer)
+                sem_op.sem_num = 0;
+                sem_op.sem_op = -1; // Decrement the semaphore (wait)
+                sem_op.sem_flg = 0;
+                rc = semop(sem_set_id, &sem_op, 1);  // Perform the semaphore operation
+                if (rc == -1) {
+                    perror("semop failed in child process");
+                    exit(1);
+                }
+
+                printf("Consumer: '%d'\n", i);
+                fflush(stdout);
+            }
+            break;
+
+        default:  // Parent process (producer)
+            for (i = 0; i < NUM_LOOPS; i++) {
+                printf("Producer: '%d'\n", i);
+                fflush(stdout);
+
+                // Increase the value of the semaphore by 1 (signal)
+                sem_op.sem_num = 0;
+                sem_op.sem_op = 1;  // Increment the semaphore (signal)
+                sem_op.sem_flg = 0;
+                rc = semop(sem_set_id, &sem_op, 1);  // Perform the semaphore operation
+                if (rc == -1) {
+                    perror("semop failed in parent process");
+                    exit(1);
+                }
+
+                // Pause execution for a little bit (about 25% of the time) to allow child to run
+                if (rand() > 3 * (RAND_MAX / 4)) {
+                    delay.tv_sec = 0;
+                    delay.tv_nsec = 10;
+                    nanosleep(&delay, NULL);
+                }
+            }
+            break;
+    }
+
+    return 0;
+}
